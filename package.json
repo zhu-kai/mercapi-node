@@ -38,8 +38,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/mercapi-node"
+    "url": "https://github.com/zhu-kai/mercapi-node"
   },
+  "homepage": "https://github.com/zhu-kai/mercapi-node#readme",
+  "bugs": {
+    "url": "https://github.com/zhu-kai/mercapi-node/issues"
+  },
+  "author": "Kai Zhu",
   "dependencies": {
     "jose": "^5.9.6"
   },
