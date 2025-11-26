@@ -233,7 +233,7 @@ export class Mercapi {
     return {
       items,
       meta: {
-        numFound: ((data.meta as Record<string, unknown>)?.numFound as number) ?? 0,
+        numFound: Number((data.meta as Record<string, unknown>)?.numFound) || 0,
         nextPageToken: ((data.meta as Record<string, unknown>)?.nextPageToken as string) ?? '',
       },
     };
