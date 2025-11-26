@@ -2,6 +2,8 @@
 
 Node.js client for Mercari Japan API. TypeScript-first, serverless-friendly.
 
+> This project is derived from [mercapi](https://github.com/take-kun/mercapi) by Take-kun.
+
 > **Disclaimer:** This is an unofficial library. Use at your own risk.
 
 ## Features
@@ -655,5 +657,3 @@ If you need to reuse keys (e.g., for performance in batch operations), use `reus
 ## License
 
 MIT
-
-This project is derived from [mercapi](https://github.com/take-kun/mercapi) by Take-kun.
