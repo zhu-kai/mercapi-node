@@ -1,8 +1,6 @@
 # mercapi-node
 
 [![npm](https://img.shields.io/npm/v/mercapi)](https://www.npmjs.com/package/mercapi)
-[![npm downloads](https://img.shields.io/npm/dm/mercapi)](https://www.npmjs.com/package/mercapi)
-[![Tests](https://github.com/zhu-kai/mercapi-node/actions/workflows/test.yml/badge.svg)](https://github.com/zhu-kai/mercapi-node/actions/workflows/test.yml)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-blue)](https://nodejs.org/)
 
 Node.js client for Mercari Japan API. TypeScript-first, serverless-friendly.
@@ -90,23 +88,23 @@ const results = await Mercapi.search('iPhone', options);
 
 #### Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `categories` | `number[]` | | Category IDs |
-| `brands` | `number[]` | | Brand IDs |
-| `sizes` | `number[]` | | Size IDs |
-| `priceMin` | `number` | | Minimum price (JPY) |
-| `priceMax` | `number` | | Maximum price (JPY) |
-| `itemConditions` | `number[]` | | Condition IDs (1-6) |
-| `shippingPayer` | `number[]` | | 1=buyer, 2=seller |
-| `colors` | `number[]` | | Color IDs (1-12) |
-| `status` | `ItemStatus[]` | `[OnSale]` | `OnSale`, `SoldOut` |
-| `sortBy` | `SortBy` | `Score` | Sort field |
-| `sortOrder` | `SortOrder` | `Desc` | Sort direction |
-| `excludeKeyword` | `string` | | Keywords to exclude |
-| `pageToken` | `string` | | Pagination token |
-| `withAuction` | `boolean` | `false` | Include auction data |
-| `excludeShopItems` | `boolean` | `false` | Exclude Mercari Shops items |
+| Option             | Type           | Default    | Description                 |
+| ------------------ | -------------- | ---------- | --------------------------- |
+| `categories`       | `number[]`     |            | Category IDs                |
+| `brands`           | `number[]`     |            | Brand IDs                   |
+| `sizes`            | `number[]`     |            | Size IDs                    |
+| `priceMin`         | `number`       |            | Minimum price (JPY)         |
+| `priceMax`         | `number`       |            | Maximum price (JPY)         |
+| `itemConditions`   | `number[]`     |            | Condition IDs (1-6)         |
+| `shippingPayer`    | `number[]`     |            | 1=buyer, 2=seller           |
+| `colors`           | `number[]`     |            | Color IDs (1-12)            |
+| `status`           | `ItemStatus[]` | `[OnSale]` | `OnSale`, `SoldOut`         |
+| `sortBy`           | `SortBy`       | `Score`    | Sort field                  |
+| `sortOrder`        | `SortOrder`    | `Desc`     | Sort direction              |
+| `excludeKeyword`   | `string`       |            | Keywords to exclude         |
+| `pageToken`        | `string`       |            | Pagination token            |
+| `withAuction`      | `boolean`      | `false`    | Include auction data        |
+| `excludeShopItems` | `boolean`      | `false`    | Exclude Mercari Shops items |
 
 #### Response: `SearchResult`
 
@@ -114,27 +112,28 @@ const results = await Mercapi.search('iPhone', options);
 interface SearchResult {
   items: SearchResultItem[];
   meta: {
-    numFound: number;      // Total matching items
+    numFound: number; // Total matching items
     nextPageToken: string; // Token for next page
   };
 }
 
 interface SearchResultItem {
-  id: string;              // Item ID (e.g., "m12345678901")
-  sellerId: string;        // Seller ID
-  name: string;            // Item title
-  price: number;           // Price in JPY
-  status: string;          // Item status
-  categoryId: number;      // Category ID
+  id: string; // Item ID (e.g., "m12345678901")
+  sellerId: string; // Seller ID
+  name: string; // Item title
+  price: number; // Price in JPY
+  status: string; // Item status
+  categoryId: number; // Category ID
   itemConditionId: number; // Condition ID (1-6)
   shippingPayerId: number; // Shipping payer ID
-  thumbnails: string[];    // Thumbnail URLs
-  created: number;         // Creation timestamp
-  updated: number;         // Last update timestamp
-  isShopItem: boolean;     // true if Mercari Shops item
-  auction?: {              // Only with withAuction: true
+  thumbnails: string[]; // Thumbnail URLs
+  created: number; // Creation timestamp
+  updated: number; // Last update timestamp
+  isShopItem: boolean; // true if Mercari Shops item
+  auction?: {
+    // Only with withAuction: true
     id: string;
-    endTime: number;       // Auction end timestamp
+    endTime: number; // Auction end timestamp
     totalBids: number;
     highestBid: number;
   };
@@ -171,8 +170,8 @@ const itemWithAuction = await Mercapi.getItem('m12345678901', { includeAuction: 
 
 #### Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
+| Option           | Type      | Default | Description          |
+| ---------------- | --------- | ------- | -------------------- |
 | `includeAuction` | `boolean` | `false` | Include auction info |
 
 #### Response: `Item | null`
@@ -184,7 +183,7 @@ interface Item {
   price: number;
   description: string;
   status: string;
-  photos: string[];           // Full-size image URLs
+  photos: string[]; // Full-size image URLs
   thumbnails: string[];
   seller: {
     id: string;
@@ -193,7 +192,7 @@ interface Item {
     numSellItems: number;
     ratings: { good: number; normal: number; bad: number };
     numRatings: number;
-    starRatingScore: number;  // 1-5
+    starRatingScore: number; // 1-5
     isFollowable: boolean;
     isBlocked: boolean;
   };
@@ -224,14 +223,15 @@ interface Item {
   isShopItem: boolean;
   isAnonymousShipping: boolean;
   isOfferable: boolean;
-  auctionInfo?: {             // Only with includeAuction: true
+  auctionInfo?: {
+    // Only with includeAuction: true
     id: string;
     startTime: number;
     endTime: number;
     totalBids: number;
     initialPrice: number;
     highestBid: number;
-    state: string;            // e.g., "STATE_ONGOING", "STATE_NO_BID"
+    state: string; // e.g., "STATE_ONGOING", "STATE_NO_BID"
     auctionType: string;
   };
 }
@@ -276,7 +276,7 @@ interface Profile {
   numSellItems: number;
   ratings: { good: number; normal: number; bad: number };
   numRatings: number;
-  starRatingScore: number;    // 1-5
+  starRatingScore: number; // 1-5
   followerCount: number;
   followingCount: number;
   isOrganizationalUser: boolean; // true if business account
@@ -362,61 +362,61 @@ do {
 
 ### SortBy
 
-| Value | Description |
-|-------|-------------|
-| `SortBy.Score` | Relevance (default) |
-| `SortBy.CreatedTime` | Newest first |
-| `SortBy.Price` | Price |
-| `SortBy.NumLikes` | Number of likes |
+| Value                | Description         |
+| -------------------- | ------------------- |
+| `SortBy.Score`       | Relevance (default) |
+| `SortBy.CreatedTime` | Newest first        |
+| `SortBy.Price`       | Price               |
+| `SortBy.NumLikes`    | Number of likes     |
 
 ### SortOrder
 
-| Value | Description |
-|-------|-------------|
+| Value            | Description          |
+| ---------------- | -------------------- |
 | `SortOrder.Desc` | Descending (default) |
-| `SortOrder.Asc` | Ascending |
+| `SortOrder.Asc`  | Ascending            |
 
 ### ItemStatus
 
-| Value | Description |
-|-------|-------------|
-| `ItemStatus.OnSale` | Currently on sale |
-| `ItemStatus.SoldOut` | Sold out |
+| Value                | Description       |
+| -------------------- | ----------------- |
+| `ItemStatus.OnSale`  | Currently on sale |
+| `ItemStatus.SoldOut` | Sold out          |
 
 ### ItemCondition
 
-| Value | ID | Japanese | English |
-|-------|-----|----------|---------|
-| `ItemCondition.BrandNew` | 1 | 新品、未使用 | Brand new |
-| `ItemCondition.LikeNew` | 2 | 未使用に近い | Like new |
-| `ItemCondition.Good` | 3 | 目立った傷や汚れなし | Good |
-| `ItemCondition.Fair` | 4 | やや傷や汚れあり | Fair |
-| `ItemCondition.Poor` | 5 | 傷や汚れあり | Poor |
-| `ItemCondition.Bad` | 6 | 全体的に状態が悪い | Bad |
+| Value                    | ID  | Japanese             | English   |
+| ------------------------ | --- | -------------------- | --------- |
+| `ItemCondition.BrandNew` | 1   | 新品、未使用         | Brand new |
+| `ItemCondition.LikeNew`  | 2   | 未使用に近い         | Like new  |
+| `ItemCondition.Good`     | 3   | 目立った傷や汚れなし | Good      |
+| `ItemCondition.Fair`     | 4   | やや傷や汚れあり     | Fair      |
+| `ItemCondition.Poor`     | 5   | 傷や汚れあり         | Poor      |
+| `ItemCondition.Bad`      | 6   | 全体的に状態が悪い   | Bad       |
 
 ### ShippingPayer
 
-| Value | ID | Japanese | English |
-|-------|-----|----------|---------|
-| `ShippingPayer.Buyer` | 1 | 着払い | Buyer pays |
-| `ShippingPayer.Seller` | 2 | 送料込み | Seller pays (free shipping) |
+| Value                  | ID  | Japanese | English                     |
+| ---------------------- | --- | -------- | --------------------------- |
+| `ShippingPayer.Buyer`  | 1   | 着払い   | Buyer pays                  |
+| `ShippingPayer.Seller` | 2   | 送料込み | Seller pays (free shipping) |
 
 ### Color
 
-| Value | ID |
-|-------|-----|
-| `Color.Black` | 1 |
-| `Color.White` | 2 |
-| `Color.Gray` | 3 |
-| `Color.Brown` | 4 |
-| `Color.Red` | 5 |
-| `Color.Pink` | 6 |
-| `Color.Purple` | 7 |
-| `Color.Blue` | 8 |
-| `Color.Beige` | 9 |
-| `Color.Green` | 10 |
-| `Color.Yellow` | 11 |
-| `Color.Orange` | 12 |
+| Value          | ID  |
+| -------------- | --- |
+| `Color.Black`  | 1   |
+| `Color.White`  | 2   |
+| `Color.Gray`   | 3   |
+| `Color.Brown`  | 4   |
+| `Color.Red`    | 5   |
+| `Color.Pink`   | 6   |
+| `Color.Purple` | 7   |
+| `Color.Blue`   | 8   |
+| `Color.Beige`  | 9   |
+| `Color.Green`  | 10  |
+| `Color.Yellow` | 11  |
+| `Color.Orange` | 12  |
 
 ## Reference Data
 
@@ -425,21 +425,21 @@ https://github.com/take-kun/mercapi/tree/main/docs/facets
 
 ### Top-Level Categories
 
-| ID | Japanese | English |
-|----|----------|---------|
-| 1 | レディース | Women's |
-| 2 | メンズ | Men's |
-| 3 | ベビー・キッズ | Baby & Kids |
-| 4 | インテリア・住まい・小物 | Interior |
-| 5 | 本・音楽・ゲーム | Books/Music/Games |
-| 6 | おもちゃ・ホビー・グッズ | Toys/Hobbies |
-| 7 | コスメ・香水・美容 | Cosmetics |
-| 8 | 家電・スマホ・カメラ | Electronics |
-| 9 | スポーツ・レジャー | Sports |
-| 10 | ハンドメイド | Handmade |
-| 11 | チケット | Tickets |
-| 12 | 自動車・オートバイ | Vehicles |
-| 13 | その他 | Other |
+| ID  | Japanese                 | English           |
+| --- | ------------------------ | ----------------- |
+| 1   | レディース               | Women's           |
+| 2   | メンズ                   | Men's             |
+| 3   | ベビー・キッズ           | Baby & Kids       |
+| 4   | インテリア・住まい・小物 | Interior          |
+| 5   | 本・音楽・ゲーム         | Books/Music/Games |
+| 6   | おもちゃ・ホビー・グッズ | Toys/Hobbies      |
+| 7   | コスメ・香水・美容       | Cosmetics         |
+| 8   | 家電・スマホ・カメラ     | Electronics       |
+| 9   | スポーツ・レジャー       | Sports            |
+| 10  | ハンドメイド             | Handmade          |
+| 11  | チケット                 | Tickets           |
+| 12  | 自動車・オートバイ       | Vehicles          |
+| 13  | その他                   | Other             |
 
 ## Error Handling
 
@@ -459,12 +459,12 @@ try {
 
 ### Return Values
 
-| Method | Not Found | Error |
-|--------|-----------|-------|
-| `search()` | Returns `{ items: [], meta: { numFound: 0 } }` | Throws Error |
-| `getItem()` | Returns `null` | Throws Error |
-| `getProfile()` | Returns `null` | Throws Error |
-| `getSellerItems()` | Returns `{ items: [], nextPageToken: '' }` | Throws Error |
+| Method             | Not Found                                      | Error        |
+| ------------------ | ---------------------------------------------- | ------------ |
+| `search()`         | Returns `{ items: [], meta: { numFound: 0 } }` | Throws Error |
+| `getItem()`        | Returns `null`                                 | Throws Error |
+| `getProfile()`     | Returns `null`                                 | Throws Error |
+| `getSellerItems()` | Returns `{ items: [], nextPageToken: '' }`     | Throws Error |
 
 ## TypeScript
 
@@ -611,9 +611,7 @@ async function batchFetchItems(itemIds: string[]) {
   // Use instance with key reuse for batch operations
   const client = new Mercapi({ reuseKeys: true });
 
-  const results = await Promise.all(
-    itemIds.map(id => client.getItem(id))
-  );
+  const results = await Promise.all(itemIds.map((id) => client.getItem(id)));
 
   return results.filter((item): item is NonNullable<typeof item> => item !== null);
 }
@@ -635,7 +633,12 @@ async function monitorNewListings(keyword: string, callback: (items: any[]) => v
       });
 
       const newItems = lastSeenId
-        ? results.items.filter(item => item.id !== lastSeenId).slice(0, results.items.findIndex(i => i.id === lastSeenId))
+        ? results.items
+            .filter((item) => item.id !== lastSeenId)
+            .slice(
+              0,
+              results.items.findIndex((i) => i.id === lastSeenId)
+            )
         : results.items;
 
       if (newItems.length > 0) {
