@@ -1,5 +1,9 @@
 # mercapi-node
 
+[![npm](https://img.shields.io/npm/v/mercapi)](https://www.npmjs.com/package/mercapi)
+[![Tests](https://github.com/zhu-kai/mercapi-node/actions/workflows/test.yml/badge.svg)](https://github.com/zhu-kai/mercapi-node/actions/workflows/test.yml)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18-blue)](https://nodejs.org/)
+
 Node.js client for Mercari Japan API. TypeScript-first, serverless-friendly.
 
 > This project is derived from [mercapi](https://github.com/take-kun/mercapi) by Take-kun.
