@@ -20,7 +20,24 @@ interface Run {
   timestamp: string;
   ok: boolean;
   checks: Check[];
+  probe?: {
+    query: string;
+    numFound: number;
+    topItem: { name: string; price: number };
+  };
 }
+
+// Rotates daily; popular enough that a healthy API always returns results
+const PROBE_QUERIES = [
+  'ダイワ ソルティガ', // Daiwa Saltiga
+  'シマノ ステラ', // Shimano Stella
+  'ポケモンカード 旧裏',
+  'ゲームボーイカラー',
+  'Leica M6',
+  'ジャンク カメラ',
+  'エヴァンゲリオン フィギュア',
+  'カセットテープ 昭和',
+];
 
 const checks: Check[] = [];
 
@@ -28,12 +45,18 @@ function check(name: string, cond: boolean, detail: unknown, required = true) {
   checks.push({ name, ok: cond, required, detail: String(detail).slice(0, 80) });
 }
 
-async function runChecks() {
+async function runChecks(): Promise<Run> {
   const m = new Mercapi();
   const now = Date.now() / 1000;
 
-  const res = await m.search('ゲーム');
-  check('search: returns items', res.items.length > 0, `${res.items.length} items`);
+  let query = PROBE_QUERIES[new Date().getUTCDate() % PROBE_QUERIES.length];
+  let res = await m.search(query);
+  if (res.items.length === 0) {
+    // Don't let a quiet niche query masquerade as an API outage
+    query = 'ゲーム';
+    res = await m.search(query);
+  }
+  check('search: returns items', res.items.length > 0, `"${query}" → ${res.items.length} items`);
   check('search: numFound', res.meta.numFound > 0, res.meta.numFound);
   const first = res.items[0];
   check(
@@ -76,7 +99,21 @@ async function runChecks() {
     sellerItems ? `${sellerItems.items.length} items` : 'skipped'
   );
 
-  return { timestamp: new Date().toISOString(), ok: checks.filter((c) => c.required).every((c) => c.ok), checks };
+  const priciest = [...res.items].sort((a, b) => b.price - a.price)[0];
+  return {
+    timestamp: new Date().toISOString(),
+    ok: checks.filter((c) => c.required).every((c) => c.ok),
+    checks,
+    probe: {
+      query,
+      numFound: res.meta.numFound,
+      topItem: { name: priciest.name, price: priciest.price },
+    },
+  };
+}
+
+function esc(s: string): string {
+  return s.replace(/</g, '&lt;');
 }
 
 function renderPage(history: Run[]): string {
@@ -86,7 +123,7 @@ function renderPage(history: Run[]): string {
       (c) => `<tr>
         <td>${c.ok ? '✅' : c.required ? '❌' : '⚠️'}</td>
         <td>${c.name}${c.required ? '' : ' <small>(optional)</small>'}</td>
-        <td><code>${c.detail.replace(/</g, '&lt;')}</code></td>
+        <td><code>${esc(c.detail)}</code></td>
       </tr>`
     )
     .join('\n');
@@ -120,6 +157,12 @@ function renderPage(history: Run[]): string {
 <div class="banner">${latest.ok ? 'Operational — the Mercari API works as this library expects' : 'Broken — the Mercari API changed or is unreachable'}</div>
 <p class="muted">Last checked: ${latest.timestamp} · runs every 6 hours ·
   <a href="https://github.com/zhu-kai/mercapi-node">GitHub</a></p>
+${
+  latest.probe
+    ? `<p>Today's probe: <strong>${esc(latest.probe.query)}</strong> — ${latest.probe.numFound.toLocaleString()} listings on Mercari right now.
+       Priciest find: <strong>¥${latest.probe.topItem.price.toLocaleString()}</strong> <span class="muted">${esc(latest.probe.topItem.name)}</span></p>`
+    : ''
+}
 <div>${dots}</div>
 <table>${rows}</table>
 </body>
