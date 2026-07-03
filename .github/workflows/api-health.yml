@@ -36,6 +36,7 @@ jobs:
         run: curl -sfL https://zhu-kai.github.io/mercapi-node/history.json -o history.json || echo '[]' > history.json
 
       - name: Run health check
+        id: health
         run: npx tsx scripts/health-check.ts --history history.json --out public
 
       - name: Upload status page
@@ -49,8 +50,9 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
+      # Only the API check failing means the API changed; a flaky Pages deploy does not
       - name: Open issue on failure
-        if: failure()
+        if: failure() && steps.health.conclusion == 'failure'
         uses: actions/github-script@v7
         with:
           script: |
