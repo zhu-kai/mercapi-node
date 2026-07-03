@@ -1,6 +1,6 @@
 {
   "name": "mercapi",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Node.js client for Mercari Japan API",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -26,7 +26,8 @@
     "test:all": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src tests",
+    "lint": "eslint .",
+    "fetch-facets": "tsx scripts/fetch-facets.ts",
     "format": "prettier --write .",
     "prepublishOnly": "npm run build"
   },
@@ -40,7 +41,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zhu-kai/mercapi-node"
+    "url": "git+https://github.com/zhu-kai/mercapi-node.git"
   },
   "homepage": "https://github.com/zhu-kai/mercapi-node#readme",
   "bugs": {
@@ -55,7 +56,9 @@
     "eslint": "^9.16.0",
     "prettier": "^3.4.2",
     "tsup": "^8.3.5",
+    "tsx": "^4.22.5",
     "typescript": "^5.7.2",
+    "typescript-eslint": "^8.62.1",
     "vitest": "^2.1.8"
   }
 }

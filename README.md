@@ -2,6 +2,9 @@
 
 [![npm](https://img.shields.io/npm/v/mercapi)](https://www.npmjs.com/package/mercapi)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-blue)](https://nodejs.org/)
+[![API Health](https://github.com/zhu-kai/mercapi-node/actions/workflows/api-health.yml/badge.svg)](https://zhu-kai.github.io/mercapi-node/)
+
+Live API status: [zhu-kai.github.io/mercapi-node](https://zhu-kai.github.io/mercapi-node/) — a scheduled check runs every 6 hours against the real Mercari API and fails loudly if the API changes.
 
 Node.js client for Mercari Japan API. TypeScript-first, serverless-friendly.
 
@@ -103,8 +106,10 @@ const results = await Mercapi.search('iPhone', options);
 | `sortOrder`        | `SortOrder`    | `Desc`     | Sort direction              |
 | `excludeKeyword`   | `string`       |            | Keywords to exclude         |
 | `pageToken`        | `string`       |            | Pagination token            |
-| `withAuction`      | `boolean`      | `false`    | Include auction data        |
+| `withAuction`      | `boolean`      | `true`     | Include auction data        |
 | `excludeShopItems` | `boolean`      | `false`    | Exclude Mercari Shops items |
+
+ID-based filters (`categories`, `brands`, `sizes`, etc.) reference Mercari master data. The full lists are in [`docs/facets/`](docs/facets/); refresh them anytime with `npm run fetch-facets`.
 
 #### Response: `SearchResult`
 
@@ -131,11 +136,12 @@ interface SearchResultItem {
   updated: number; // Last update timestamp
   isShopItem: boolean; // true if Mercari Shops item
   auction?: {
-    // Only with withAuction: true
+    // Only present for auction items
     id: string;
-    endTime: number; // Auction end timestamp
+    endTime: number; // Bid deadline (Unix timestamp, seconds)
     totalBids: number;
-    highestBid: number;
+    highestBid: number; // Current highest bid in JPY
+    initialPrice: number; // Starting price in JPY
   };
 }
 ```
@@ -155,6 +161,13 @@ const results = await Mercapi.search('AirPods', {
   sortOrder: SortOrder.Asc,
   excludeShopItems: true,
 });
+
+// Auction items are flagged via the `auction` field
+for (const item of results.items) {
+  if (item.auction) {
+    console.log(`[Auction] ${item.name}: ¥${item.auction.highestBid} (${item.auction.totalBids} bids)`);
+  }
+}
 ```
 
 ---
@@ -661,6 +674,10 @@ The original Python mercapi has a known issue where search results may differ fr
 **Our solution:** By default, this library generates fresh keys for each request, avoiding this issue entirely. This is ideal for serverless environments where each invocation is independent.
 
 If you need to reuse keys (e.g., for performance in batch operations), use `reuseKeys: true` and call `rotateKeys()` periodically.
+
+## Credits
+
+This project is a TypeScript/Node.js port of [mercapi](https://github.com/take-kun/mercapi) by [take-kun](https://github.com/take-kun), which pioneered the reverse-engineering of the Mercari Japan API, including the DPoP request signing scheme and the auction/shop item response formats. All API insights originate from that project — please consider starring it if you find this library useful.
 
 ## License
 
