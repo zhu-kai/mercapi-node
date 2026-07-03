@@ -42,15 +42,15 @@ describe('Mercapi Integration Tests', () => {
     });
 
     it('should search with auction data', async () => {
-      const results = await Mercapi.search('ゲーム', { withAuction: true });
+      const results = await Mercapi.search('ゲーム');
 
       expect(results.items.length).toBeGreaterThan(0);
 
       // Some items may have auction data
       const auctionItem = results.items.find((i) => i.auction);
       if (auctionItem?.auction) {
-        expect(auctionItem.auction.id).toBeDefined();
-        expect(typeof auctionItem.auction.totalBids).toBe('number');
+        expect(auctionItem.auction.endTime).toBeGreaterThan(Date.now() / 1000 - 86400);
+        expect(auctionItem.auction.highestBid).toBeGreaterThan(0);
       }
     });
 
@@ -118,7 +118,7 @@ describe('Mercapi Integration Tests', () => {
     });
 
     it('should get item with auction info', async () => {
-      const results = await Mercapi.search('ゲーム', { withAuction: true });
+      const results = await Mercapi.search('ゲーム');
       const auctionItem = results.items.find((i) => i.auction);
 
       if (!auctionItem) {

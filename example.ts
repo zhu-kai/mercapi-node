@@ -36,14 +36,15 @@ async function main() {
 
   console.log('');
 
-  // 3. Search with auction data
-  console.log('3. Search with auction data');
-  const auctionSearch = await Mercapi.search('ゲーム', { withAuction: true });
+  // 3. Auction items (included by default)
+  console.log('3. Auction items');
+  const auctionSearch = await Mercapi.search('ゲーム');
   const auctionItems = auctionSearch.items.filter((i) => i.auction);
   console.log(`   Found ${auctionItems.length} auction items`);
   auctionItems.slice(0, 2).forEach((item) => {
     console.log(`   - ${item.name.slice(0, 30)}...`);
-    console.log(`     Start: ¥${item.price}, Bids: ${item.auction!.totalBids}`);
+    console.log(`     Highest bid: ¥${item.auction!.highestBid}, Bids: ${item.auction!.totalBids}`);
+    console.log(`     Ends: ${new Date(item.auction!.endTime * 1000).toISOString()}`);
   });
 
   console.log('');

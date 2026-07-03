@@ -107,7 +107,7 @@ export class Mercapi {
 
   /** Get seller profile by ID */
   async getProfile(userId: string): Promise<Profile | null> {
-    const url = `${ENDPOINTS.PROFILE}?user_id=${encodeURIComponent(userId)}`;
+    const url = `${ENDPOINTS.PROFILE}?user_id=${encodeURIComponent(userId)}&_user_format=profile`;
     const response = await this.signedFetch(url);
 
     if (response.status === 404) {
@@ -130,7 +130,7 @@ export class Mercapi {
       status: 'on_sale,trading,sold_out',
     });
     if (pageToken) {
-      params.set('page_token', pageToken);
+      params.set('max_pager_id', pageToken);
     }
 
     const url = `${ENDPOINTS.SELLER_ITEMS}?${params.toString()}`;
@@ -153,11 +153,16 @@ export class Mercapi {
       statusList.push(ItemStatus.Trading);
     }
 
+    // Mirrors the payload sent by the official web app (jp.mercari.com)
     return {
       userId: '',
+      config: {
+        responseToggles: ['QUERY_SUGGESTION_WEB_1'],
+      },
       pageSize: 120,
       pageToken: options?.pageToken ?? '',
-      searchSessionId: randomUUID(),
+      searchSessionId: randomUUID().replace(/-/g, ''),
+      source: 'BaseSerp',
       indexRouting: 'INDEX_ROUTING_UNSPECIFIED',
       thumbnailTypes: [],
       searchCondition: {
@@ -181,10 +186,24 @@ export class Mercapi {
         attributes: [],
         itemTypes: [],
         skuIds: [],
+        shopIds: [],
+        excludeShippingMethodIds: [],
       },
-      defaultDatasets: [],
       serviceFrom: 'suruga',
-      withAuction: options?.withAuction ?? false,
+      withItemBrand: true,
+      withItemSize: false,
+      withItemPromotions: true,
+      withItemSizes: true,
+      withShopname: false,
+      useDynamicAttribute: true,
+      withSuggestedItems: true,
+      withOfferPricePromotion: true,
+      withProductSuggest: true,
+      withParentProducts: false,
+      withProductArticles: true,
+      withSearchConditionId: false,
+      withAuction: options?.withAuction ?? true,
+      laplaceDeviceUuid: randomUUID(),
     };
   }
 
@@ -193,14 +212,18 @@ export class Mercapi {
     options?: SearchOptions
   ): SearchResult {
     let items = ((data.items as Record<string, unknown>[]) ?? []).map((item) => {
-      // Check for auction data
-      const auctionData = item.auction as Record<string, unknown> | undefined;
+      // Auction object uses camelCase keys; bidDeadline is an ISO 8601 string,
+      // numbers are returned as strings (e.g. {"bidDeadline":"2026-02-20T11:41:10Z","totalBid":"16"})
+      const auctionData = item.auction as Record<string, unknown> | null | undefined;
       const auction = auctionData
         ? {
             id: (auctionData.id as string) ?? '',
-            endTime: (auctionData.bid_deadline as number) ?? 0,
-            totalBids: (auctionData.total_bid as number) ?? 0,
-            highestBid: (auctionData.highest_bid as number) ?? 0,
+            endTime: auctionData.bidDeadline
+              ? Math.floor(Date.parse(auctionData.bidDeadline as string) / 1000)
+              : 0,
+            totalBids: Number(auctionData.totalBid) || 0,
+            highestBid: Number(auctionData.highestBid) || 0,
+            initialPrice: Number(auctionData.initialPrice) || 0,
           }
         : undefined;
 
@@ -380,7 +403,8 @@ export class Mercapi {
   }
 
   private mapSellerItemsResponse(data: Record<string, unknown>): SellerItems {
-    const items = ((data.data as Record<string, unknown>[]) ?? []).map((item) => ({
+    const rawItems = (data.data as Record<string, unknown>[]) ?? [];
+    const items = rawItems.map((item) => ({
       id: item.id as string,
       name: item.name as string,
       price: item.price as number,
@@ -390,9 +414,13 @@ export class Mercapi {
       updated: item.updated as number,
     }));
 
+    // Paging: pass max_pager_id below the last item's pager_id to get the next page
+    const hasNext = (data.meta as Record<string, unknown>)?.has_next === true;
+    const lastPagerId = rawItems[rawItems.length - 1]?.pager_id as number | undefined;
+
     return {
       items,
-      nextPageToken: (data.pager_id as string) ?? '',
+      nextPageToken: hasNext && lastPagerId ? String(lastPagerId - 1) : '',
     };
   }
 

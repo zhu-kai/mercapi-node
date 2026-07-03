@@ -118,6 +118,7 @@ describe('Mercapi', () => {
       expect(payload.searchCondition.priceMax).toBe(50000);
       expect(payload.searchCondition.sort).toBe(SortBy.Price);
       expect(payload.searchCondition.order).toBe(SortOrder.Asc);
+      expect(payload.withAuction).toBe(true);
     });
 
     it('should add STATUS_TRADING when STATUS_SOLD_OUT is included', async () => {
@@ -239,9 +240,10 @@ describe('Mercapi', () => {
               price: '500',
               auction: {
                 id: 'auc123',
-                bid_deadline: 1700100000,
-                total_bid: 5,
-                highest_bid: 1500,
+                bidDeadline: '2026-02-20T11:41:10Z',
+                totalBid: '5',
+                highestBid: '1500',
+                initialPrice: '300',
               },
             },
           ],
@@ -249,13 +251,14 @@ describe('Mercapi', () => {
         }),
       });
 
-      const result = await client.search('test', { withAuction: true });
+      const result = await client.search('test');
 
       expect(result.items[0].auction).toBeDefined();
       expect(result.items[0].auction!.id).toBe('auc123');
-      expect(result.items[0].auction!.endTime).toBe(1700100000);
+      expect(result.items[0].auction!.endTime).toBe(Math.floor(Date.parse('2026-02-20T11:41:10Z') / 1000));
       expect(result.items[0].auction!.totalBids).toBe(5);
       expect(result.items[0].auction!.highestBid).toBe(1500);
+      expect(result.items[0].auction!.initialPrice).toBe(300);
     });
 
     it('should throw on error response', async () => {
@@ -463,6 +466,7 @@ describe('Mercapi', () => {
               thumbnails: ['https://example.com/thumb1.jpg'],
               created: 1700000000,
               updated: 1700000001,
+              pager_id: 5769435476,
             },
             {
               id: 'm002',
@@ -472,9 +476,10 @@ describe('Mercapi', () => {
               thumbnails: ['https://example.com/thumb2.jpg'],
               created: 1700000000,
               updated: 1700000001,
+              pager_id: 5769434516,
             },
           ],
-          pager_id: 'next_page_token',
+          meta: { has_next: true },
         }),
       });
 
@@ -484,13 +489,28 @@ describe('Mercapi', () => {
       expect(result.items[0].id).toBe('m001');
       expect(result.items[0].name).toBe('Item 1');
       expect(result.items[1].status).toBe('sold_out');
-      expect(result.nextPageToken).toBe('next_page_token');
+      expect(result.nextPageToken).toBe('5769434515');
+    });
+
+    it('should return empty nextPageToken on last page', async () => {
+      const client = new Mercapi();
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [{ id: 'm003', name: 'Item 3', price: 500, pager_id: 100 }],
+          meta: { has_next: false },
+        }),
+      });
+
+      const result = await client.getSellerItems('seller123');
+      expect(result.nextPageToken).toBe('');
     });
 
     it('should work with static method', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ data: [], pager_id: '' }),
+        json: async () => ({ data: [], meta: { has_next: false } }),
       });
 
       const result = await Mercapi.getSellerItems('seller123');

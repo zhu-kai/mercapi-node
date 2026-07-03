@@ -28,7 +28,7 @@ export interface SearchOptions {
   excludeKeyword?: string;
   /** Pagination token from previous response */
   pageToken?: string;
-  /** Include auction data in results (default: false) */
+  /** Include auction data in results (default: true) */
   withAuction?: boolean;
   /** Exclude shop items from results (default: false, includes all) */
   excludeShopItems?: boolean;
@@ -36,14 +36,16 @@ export interface SearchOptions {
 
 /** Auction info in search results (summary) */
 export interface SearchAuction {
-  /** Auction ID */
+  /** Auction ID (may be empty in search results) */
   id: string;
-  /** Expected auction end timestamp */
+  /** Bid deadline as Unix timestamp in seconds */
   endTime: number;
   /** Total number of bids */
   totalBids: number;
   /** Current highest bid amount */
   highestBid: number;
+  /** Starting price in JPY */
+  initialPrice: number;
 }
 
 /** Single item in search results */
@@ -92,15 +94,18 @@ export interface SearchResult {
   meta: SearchMeta;
 }
 
-/** Internal search request payload */
+/** Internal search request payload, mirrors the official web app */
 export interface SearchRequestPayload {
   userId: string;
+  config: {
+    responseToggles: string[];
+  };
   pageSize: number;
   pageToken: string;
   searchSessionId: string;
+  source: string;
   indexRouting: string;
   thumbnailTypes: string[];
-  withAuction: boolean;
   searchCondition: {
     keyword: string;
     excludeKeyword: string;
@@ -122,7 +127,22 @@ export interface SearchRequestPayload {
     attributes: unknown[];
     itemTypes: string[];
     skuIds: string[];
+    shopIds: string[];
+    excludeShippingMethodIds: number[];
   };
-  defaultDatasets: string[];
   serviceFrom: string;
+  withItemBrand: boolean;
+  withItemSize: boolean;
+  withItemPromotions: boolean;
+  withItemSizes: boolean;
+  withShopname: boolean;
+  useDynamicAttribute: boolean;
+  withSuggestedItems: boolean;
+  withOfferPricePromotion: boolean;
+  withProductSuggest: boolean;
+  withParentProducts: boolean;
+  withProductArticles: boolean;
+  withSearchConditionId: boolean;
+  withAuction: boolean;
+  laplaceDeviceUuid: string;
 }
