@@ -12,12 +12,12 @@ jobs:
       contents: read
       id-token: write # OIDC for npm trusted publishing
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # No registry-url here: it would write a placeholder _authToken to .npmrc,
       # which preempts the OIDC token exchange used by trusted publishing
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
 
@@ -39,10 +39,10 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
           registry-url: https://npm.pkg.github.com/
