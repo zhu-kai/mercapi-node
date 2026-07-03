@@ -6,12 +6,21 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   issues: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
 
@@ -24,19 +33,21 @@ jobs:
         run: npm ci
 
       - name: Restore status history
-        run: |
-          git fetch origin gh-pages --depth 1 2>/dev/null || true
-          git show origin/gh-pages:history.json > history.json 2>/dev/null || echo '[]' > history.json
+        run: curl -sfL https://zhu-kai.github.io/mercapi-node/history.json -o history.json || echo '[]' > history.json
 
       - name: Run health check
         run: npx tsx scripts/health-check.ts --history history.json --out public
 
-      - name: Publish status page
+      - name: Upload status page
         if: always()
-        uses: peaceiris/actions-gh-pages@v4
+        uses: actions/upload-pages-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
+          path: public
+
+      - name: Deploy to GitHub Pages
+        if: always()
+        id: deployment
+        uses: actions/deploy-pages@v4
 
       - name: Open issue on failure
         if: failure()
