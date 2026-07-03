@@ -14,11 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No registry-url here: it would write a placeholder _authToken to .npmrc,
+      # which preempts the OIDC token exchange used by trusted publishing
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org/
 
       - name: Update npm (trusted publishing needs >= 11.5.1)
         run: npm install -g npm@latest
@@ -56,6 +57,11 @@ jobs:
         run: npm pkg set name='@zhu-kai/mercapi'
 
       - name: Publish to GitHub Packages
-        run: npm publish
+        run: |
+          if npm view "@zhu-kai/mercapi@$(npm pkg get version | tr -d '"')" version >/dev/null 2>&1; then
+            echo "Version already published, skipping"
+          else
+            npm publish
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
