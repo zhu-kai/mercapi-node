@@ -182,4 +182,6 @@ export interface Item {
   isOfferable: boolean;
   /** Auction info (only present for auction items) */
   auctionInfo?: AuctionInfo;
+  /** Dynamic item attributes (raw; schema varies by category) */
+  itemAttributes?: Record<string, unknown>[];
 }

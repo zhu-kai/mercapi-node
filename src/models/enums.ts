@@ -74,3 +74,11 @@ export enum Color {
   Yellow = 11,
   Orange = 12,
 }
+
+/** Listing type: individual sellers vs Mercari Shops */
+export enum ItemType {
+  /** Regular listing by an individual seller */
+  Mercari = 'ITEM_TYPE_MERCARI',
+  /** Mercari Shops listing */
+  Beyond = 'ITEM_TYPE_BEYOND',
+}
