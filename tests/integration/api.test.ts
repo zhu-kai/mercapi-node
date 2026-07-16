@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { Mercapi, SortBy, SortOrder, ItemCondition, ShippingPayer } from '../../src/index';
+import { Mercapi, SortBy, SortOrder, ItemCondition, ItemType, ShippingPayer } from '../../src/index';
 
 describe('Mercapi Integration Tests', () => {
   describe('search', () => {
@@ -196,6 +196,136 @@ describe('Mercapi Integration Tests', () => {
         expect(typeof item.price).toBe('number');
         expect(item.status).toBeDefined();
       }
+    });
+  });
+
+  describe('search by listing type and seller', () => {
+    it('should return only Mercari Shops items', async () => {
+      const results = await Mercapi.search('switch', { itemTypes: [ItemType.Beyond] });
+
+      expect(results.items.length).toBeGreaterThan(0);
+      expect(results.items.every((i) => i.isShopItem)).toBe(true);
+      expect(results.items.some((i) => i.shopName)).toBe(true);
+    });
+
+    it('should filter by seller ID', async () => {
+      const seed = await Mercapi.search('服');
+      const sellerId = seed.items[0].sellerId;
+
+      const results = await Mercapi.search('', { sellerIds: [sellerId] });
+
+      expect(results.items.length).toBeGreaterThan(0);
+      expect(results.items.every((i) => i.sellerId === sellerId)).toBe(true);
+    });
+  });
+
+  describe('getReviews', () => {
+    it('should get reviews with pagination', async () => {
+      const seed = await Mercapi.search('服');
+      const sellerId = seed.items[0].sellerId;
+
+      const reviews = await Mercapi.getReviews(sellerId, { limit: 3 });
+
+      expect(Array.isArray(reviews)).toBe(true);
+      if (reviews.length > 0) {
+        expect(['seller', 'buyer']).toContain(reviews[0].subject);
+        expect(['good', 'normal', 'bad']).toContain(reviews[0].fame);
+        expect(reviews[0].user.id).toBeDefined();
+        expect(reviews[0].pagerId).toBeGreaterThan(0);
+      }
+      if (reviews.length === 3) {
+        const older = await Mercapi.getReviews(sellerId, {
+          limit: 3,
+          maxPagerId: reviews[2].pagerId - 1,
+        });
+        if (older.length > 0) {
+          expect(older[0].pagerId).toBeLessThan(reviews[2].pagerId);
+        }
+      }
+    });
+  });
+
+  describe('getSimilarItems', () => {
+    it('should get similar items', async () => {
+      const seed = await Mercapi.search('switch');
+      const itemId = seed.items.find((i) => !i.isShopItem)!.id;
+
+      const items = await Mercapi.getSimilarItems(itemId, { limit: 5 });
+
+      expect(items.length).toBeGreaterThan(0);
+      expect(items[0].id).toBeDefined();
+      expect(items[0].price).toBeGreaterThan(0);
+      expect(items[0].thumbnail).toContain('https://');
+    });
+  });
+
+  describe('getSearchSuggestions', () => {
+    it('should get autocomplete suggestions', async () => {
+      const suggestions = await Mercapi.getSearchSuggestions('ニンテンド');
+
+      expect(suggestions.length).toBeGreaterThan(0);
+      expect(suggestions[0].keyword).toBeDefined();
+      expect(suggestions[0].title).toBeDefined();
+    });
+  });
+
+  describe('getShopsProduct', () => {
+    it('should get a Mercari Shops product', async () => {
+      const results = await Mercapi.search('switch', { itemTypes: [ItemType.Beyond] });
+      const productId = results.items[0].id;
+
+      const product = await Mercapi.getShopsProduct(productId);
+
+      expect(product).not.toBeNull();
+      expect(product!.id).toBe(productId);
+      expect(product!.price).toBeGreaterThan(0);
+      expect(product!.displayName).toBeDefined();
+      expect(product!.photos.length).toBeGreaterThan(0);
+      expect(product!.shop?.displayName).toBeDefined();
+    });
+
+    it('should return null for non-existent product', async () => {
+      const product = await Mercapi.getShopsProduct('2JU2000000000000000000');
+
+      expect(product).toBeNull();
+    });
+  });
+
+  describe('seller badges and desired price', () => {
+    it('should get badges and identity verification', async () => {
+      const seed = await Mercapi.search('服');
+      const sellerId = seed.items[0].sellerId;
+
+      const badges = await Mercapi.getSellerBadges(sellerId);
+      const verified = await Mercapi.hasIdentityVerifiedBadge(sellerId);
+
+      expect(Array.isArray(badges)).toBe(true);
+      expect(typeof verified).toBe('boolean');
+      if (badges.length > 0) {
+        expect(badges[0].id).toBeGreaterThan(0);
+        expect(badges[0].name).toBeDefined();
+      }
+    });
+
+    it('should get desired price info', async () => {
+      const seed = await Mercapi.search('switch');
+      const itemId = seed.items.find((i) => !i.isShopItem)!.id;
+
+      const info = await Mercapi.getDesiredPriceInfo(itemId);
+
+      expect(info).not.toBeNull();
+      expect(info!.itemId).toBe(itemId);
+      expect(info!.registeredCount).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('getMasterData', () => {
+    it('should get item conditions dataset', async () => {
+      const data = await Mercapi.getMasterData('itemConditions');
+
+      const conditions = data.conditions as { id: string; name: string }[];
+      expect(conditions.length).toBe(6);
+      expect(conditions[0].name).toBe('新品、未使用');
     });
   });
 

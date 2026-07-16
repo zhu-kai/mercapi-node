@@ -1,10 +1,13 @@
 export { Mercapi, createMercapi } from './mercapi';
-export type { MercapiOptions } from './mercapi';
+export type { MercapiOptions, SellerItemsOptions } from './mercapi';
+export { MASTER_DATASETS } from './requests/endpoints';
+export type { MasterDataset } from './requests/endpoints';
 
 export {
   SortBy,
   SortOrder,
   ItemStatus,
+  ItemType,
   ItemCondition,
   ShippingPayer,
   Color,
@@ -37,3 +40,15 @@ export type {
   SellerItem,
   SellerItems,
 } from './models/profile';
+
+export type { Review, ReviewUser } from './models/review';
+
+export type {
+  SimilarItem,
+  SearchSuggestion,
+  SuggestionCategory,
+} from './models/related';
+
+export type { ShopsProduct, ShopsProductShop } from './models/shops';
+
+export type { Badge, DesiredPriceInfo } from './models/social';

@@ -1,3 +1,5 @@
+import { AuctionInfo, ItemBrand } from './item';
+
 /** Seller profile */
 export interface Profile {
   /** User ID */
@@ -46,6 +48,12 @@ export interface SellerItem {
   created: number;
   /** Last update timestamp */
   updated: number;
+  /** True if the listing has no set price */
+  isNoPrice: boolean;
+  /** Brand info (only present for branded items) */
+  itemBrand?: ItemBrand;
+  /** Auction info (only present for auction items) */
+  auctionInfo?: AuctionInfo;
 }
 
 /** Seller items response */

@@ -15,6 +15,7 @@ Node.js client for Mercari Japan API. TypeScript-first, serverless-friendly.
 ## Features
 
 - Full TypeScript support with type definitions
+- Covers search, item details, sellers, reviews, similar items, Mercari Shops products, search autocomplete, seller badges, and master data
 - Serverless-optimized (fresh keys per request by default)
 - No heavy dependencies (only `jose` for JWT signing)
 - ESM and CommonJS support
@@ -108,6 +109,8 @@ const results = await Mercapi.search('iPhone', options);
 | `pageToken`        | `string`       |            | Pagination token            |
 | `withAuction`      | `boolean`      | `true`     | Include auction data        |
 | `excludeShopItems` | `boolean`      | `false`    | Exclude Mercari Shops items |
+| `itemTypes`        | `ItemType[]`   |            | Restrict to listing types (e.g. Shops only) |
+| `sellerIds`        | `string[]`     |            | Restrict to specific sellers |
 
 ID-based filters (`categories`, `brands`, `sizes`, etc.) reference Mercari master data. The full lists are in [`docs/facets/`](docs/facets/); refresh them anytime with `npm run fetch-facets`.
 
@@ -143,6 +146,8 @@ interface SearchResultItem {
     highestBid: number; // Current highest bid in JPY
     initialPrice: number; // Starting price in JPY
   };
+  itemBrand?: { id: number; name: string; subName: string };
+  shopName?: string; // Only present for Mercari Shops items
 }
 ```
 
@@ -178,14 +183,13 @@ Get detailed item information.
 
 ```typescript
 const item = await Mercapi.getItem('m12345678901');
-const itemWithAuction = await Mercapi.getItem('m12345678901', { includeAuction: true });
 ```
 
 #### Options
 
 | Option           | Type      | Default | Description          |
 | ---------------- | --------- | ------- | -------------------- |
-| `includeAuction` | `boolean` | `false` | Include auction info |
+| `includeAuction` | `boolean` | `true`  | Include auction info |
 
 #### Response: `Item | null`
 
@@ -237,7 +241,7 @@ interface Item {
   isAnonymousShipping: boolean;
   isOfferable: boolean;
   auctionInfo?: {
-    // Only with includeAuction: true
+    // Only present for auction items
     id: string;
     startTime: number;
     endTime: number;
@@ -247,6 +251,7 @@ interface Item {
     state: string; // e.g., "STATE_ONGOING", "STATE_NO_BID"
     auctionType: string;
   };
+  itemAttributes?: Record<string, unknown>[]; // Raw dynamic attributes; schema varies by category
 }
 ```
 
@@ -310,13 +315,26 @@ if (profile) {
 
 ---
 
-### getSellerItems(sellerId, pageToken?)
+### getSellerItems(sellerId, pageToken?, options?)
 
 Get items listed by a seller.
 
 ```typescript
 const sellerItems = await Mercapi.getSellerItems('123456789');
+const onSaleOnly = await Mercapi.getSellerItems('123456789', undefined, {
+  limit: 10,
+  status: ['on_sale'],
+  excludeArchivedItem: true,
+});
 ```
+
+#### Options
+
+| Option                | Type       | Default                          | Description                    |
+| --------------------- | ---------- | -------------------------------- | ------------------------------ |
+| `limit`               | `number`   | `30`                             | Maximum items to return        |
+| `status`              | `string[]` | `['on_sale','trading','sold_out']` | Statuses to include          |
+| `excludeArchivedItem` | `boolean`  | `false`                          | Skip listings archived by seller |
 
 #### Response: `SellerItems`
 
@@ -330,6 +348,9 @@ interface SellerItems {
     thumbnails: string[];
     created: number;
     updated: number;
+    isNoPrice: boolean;
+    itemBrand?: { id: number; name: string; subName: string };
+    auctionInfo?: AuctionInfo; // Only present for auction items
   }>;
   nextPageToken: string;
 }
@@ -348,6 +369,140 @@ if (sellerItems.nextPageToken) {
   const nextPage = await Mercapi.getSellerItems('123456789', sellerItems.nextPageToken);
 }
 ```
+
+---
+
+### getReviews(userId, options?)
+
+Get reviews written about a user, newest first.
+
+```typescript
+const reviews = await Mercapi.getReviews('123456789', { limit: 10 });
+for (const r of reviews) {
+  console.log(`[${r.fame}] ${r.user.name}: ${r.message}`);
+}
+
+// Older reviews: pass the last review's pagerId - 1
+const older = await Mercapi.getReviews('123456789', {
+  limit: 10,
+  maxPagerId: reviews[reviews.length - 1].pagerId - 1,
+});
+```
+
+```typescript
+interface Review {
+  subject: string; // Role of the reviewed user: 'seller' | 'buyer'
+  fame: string; // 'good' | 'normal' | 'bad'
+  message: string;
+  user: { id: string; name: string; photoUrl: string };
+  created: number;
+  pagerId: number; // Pagination cursor
+}
+```
+
+---
+
+### getSimilarItems(itemId, options?)
+
+Get items similar to a listing, as shown on the item page. Accepts `{ limit?: number }` (default 15).
+
+```typescript
+const similar = await Mercapi.getSimilarItems('m12345678901', { limit: 10 });
+```
+
+```typescript
+interface SimilarItem {
+  id: string; // Item ID or Shops product ID
+  name: string;
+  price: number;
+  status: string;
+  thumbnail: string;
+  itemType: string; // 'ITEM_TYPE_MERCARI' | 'ITEM_TYPE_BEYOND'
+  auctionHighestBid?: number; // Only present for auction items
+}
+```
+
+---
+
+### getSearchSuggestions(query)
+
+Search bar autocomplete: suggested keywords with category context for a partial query.
+
+```typescript
+const suggestions = await Mercapi.getSearchSuggestions('ニンテンド');
+// [{ keyword: 'ニンテンドースイッチ', title: ..., subtitle: 'テレビゲーム', categories: [{ id: 76, name: 'テレビゲーム' }] }, ...]
+```
+
+---
+
+### getShopsProduct(productId)
+
+Get Mercari Shops product details. Search results with `itemType` of `ITEM_TYPE_BEYOND` (i.e. `isShopItem: true`) are Shops products; `getItem()` does not work for them.
+
+```typescript
+const results = await Mercapi.search('switch', { itemTypes: [ItemType.Beyond] });
+const product = await Mercapi.getShopsProduct(results.items[0].id);
+```
+
+```typescript
+interface ShopsProduct {
+  id: string;
+  displayName: string;
+  price: number;
+  productTags: string[]; // e.g. ['sold_out']
+  thumbnail: string;
+  created: number;
+  updated: number;
+  photos: string[];
+  description: string;
+  shop?: {
+    id: string;
+    displayName: string;
+    thumbnail: string;
+    score: number;
+    reviewCount: number;
+  };
+  productDetail?: Record<string, unknown>; // Raw remaining data (categories, condition, shipping, variants, ...)
+}
+```
+
+Returns `null` if the product does not exist.
+
+---
+
+### getSellerBadges(userId) / hasIdentityVerifiedBadge(userId)
+
+Seller achievement badges and identity verification (本人確認) status.
+
+```typescript
+const badges = await Mercapi.getSellerBadges('123456789');
+// [{ id: 10004, name: '高評価', description: ..., iconUrl: ... }, ...]
+
+const verified = await Mercapi.hasIdentityVerifiedBadge('123456789'); // boolean
+```
+
+---
+
+### getDesiredPriceInfo(itemId)
+
+Aggregated "desired price" (希望価格) registrations for a listing.
+
+```typescript
+const info = await Mercapi.getDesiredPriceInfo('m12345678901');
+// { itemId, registeredCount, highestDesiredPrice, lowestDesiredPrice, highestDesiredPriceCount }
+```
+
+---
+
+### getMasterData(dataset)
+
+Reference (master) data enumerating IDs usable in search filters. Returns raw JSON since the schema differs per dataset.
+
+```typescript
+const conditions = await Mercapi.getMasterData('itemConditions');
+```
+
+Available datasets: `itemCategories`, `itemCategoryGroups`, `itemBrands`, `shippingMethods`, `itemSizes`, `itemColors`, `itemConditions`, `shippingPayers`.
 
 ---
 
@@ -395,6 +550,13 @@ do {
 | -------------------- | ----------------- |
 | `ItemStatus.OnSale`  | Currently on sale |
 | `ItemStatus.SoldOut` | Sold out          |
+
+### ItemType
+
+| Value              | Description                        |
+| ------------------ | ---------------------------------- |
+| `ItemType.Mercari` | Regular listing (individual seller) |
+| `ItemType.Beyond`  | Mercari Shops listing              |
 
 ### ItemCondition
 

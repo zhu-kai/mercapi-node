@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.3.0 (2026-07-16)
+
+### Added
+
+- `getReviews(userId, options?)` — reviews written about a user, with `maxPagerId` pagination.
+- `getSimilarItems(itemId, options?)` — items similar to a listing, as shown on the item page.
+- `getSearchSuggestions(query)` — search bar autocomplete with category context.
+- `getShopsProduct(productId)` — Mercari Shops product details (shop stats, photos, description); search results with `isShopItem: true` are Shops products and are not retrievable via `getItem`.
+- `getSellerBadges(userId)` and `hasIdentityVerifiedBadge(userId)` — seller achievement badges and 本人確認 status.
+- `getDesiredPriceInfo(itemId)` — aggregated 希望価格 registrations for a listing.
+- `getMasterData(dataset)` — raw reference datasets (categories, brands, sizes, colors, conditions, shipping methods/payers).
+- `search` options `itemTypes` (e.g. Mercari Shops only, via the new `ItemType` enum) and `sellerIds`; results now include `itemBrand` and `shopName`.
+- `getSellerItems` options (`limit`, `status`, `excludeArchivedItem`); items now include `isNoPrice`, `itemBrand`, and `auctionInfo`.
+- `Item.itemAttributes` — raw dynamic attributes, always requested.
+- The status page health check now exercises all of the above through the library.
+
+### Changed
+
+- `getItem` requests auction info by default (`includeAuction: true`); pass `false` to omit it.
+
 ## 0.2.0 (2026-07-03)
 
 ### Fixed

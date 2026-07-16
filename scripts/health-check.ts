@@ -8,6 +8,7 @@
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { Mercapi } from '../src/mercapi';
+import { ItemType } from '../src/models/enums';
 
 interface Check {
   name: string;
@@ -95,6 +96,55 @@ async function runChecks(): Promise<Run> {
     'sellerItems: returns items',
     sellerItems != null && sellerItems.items.length > 0,
     sellerItems ? `${sellerItems.items.length} items` : 'skipped'
+  );
+
+  // Endpoints ported from the Python mercapi; a thrown request is reported
+  // as a failed check without aborting the remaining ones
+  const attempt = async <T>(fn: () => Promise<T>): Promise<T | null> => {
+    try {
+      return await fn();
+    } catch {
+      return null;
+    }
+  };
+
+  const reviews = regular ? await attempt(() => m.getReviews(regular.sellerId, { limit: 3 })) : null;
+  check('reviews: history', reviews != null, reviews ? `${reviews.length} reviews` : 'request failed');
+
+  const similar = regular ? await attempt(() => m.getSimilarItems(regular.id, { limit: 5 })) : null;
+  check(
+    'relatedItems: similar items',
+    similar != null && similar.length > 0,
+    similar ? `${similar.length} items` : 'request failed'
+  );
+
+  const suggestions = await attempt(() => m.getSearchSuggestions('ゲーム'));
+  check(
+    'searchIndex: query autocomplete',
+    suggestions != null && suggestions.length > 0,
+    suggestions ? `${suggestions.length} suggestions` : 'request failed'
+  );
+
+  const shopsResults = await attempt(() => m.search(query, { itemTypes: [ItemType.Beyond] }));
+  const shopsProductId = shopsResults?.items[0]?.id;
+  const shopsProduct = shopsProductId
+    ? await attempt(() => m.getShopsProduct(shopsProductId))
+    : null;
+  check(
+    'shops: product detail',
+    shopsProduct != null && shopsProduct.id === shopsProductId && shopsProduct.price > 0,
+    shopsProduct ? `${shopsProduct.id} ¥${shopsProduct.price}` : 'request failed'
+  );
+
+  const badges = regular ? await attempt(() => m.getSellerBadges(regular.sellerId)) : null;
+  check('userSocial: badges', badges != null, badges ? `${badges.length} badges` : 'request failed', false);
+
+  const desired = regular ? await attempt(() => m.getDesiredPriceInfo(regular.id)) : null;
+  check(
+    'desiredPrice: info',
+    desired != null && desired.itemId === regular!.id,
+    desired ? `${desired.registeredCount} registrations` : 'request failed',
+    false
   );
 
   const priciest = [...res.items].sort((a, b) => b.price - a.price)[0];

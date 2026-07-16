@@ -1,4 +1,5 @@
-import { ItemStatus, SortBy, SortOrder } from './enums';
+import { ItemStatus, ItemType, SortBy, SortOrder } from './enums';
+import { ItemBrand } from './item';
 
 /** Search filter options */
 export interface SearchOptions {
@@ -32,6 +33,10 @@ export interface SearchOptions {
   withAuction?: boolean;
   /** Exclude shop items from results (default: false, includes all) */
   excludeShopItems?: boolean;
+  /** Restrict results to listing types (e.g. Mercari Shops only) */
+  itemTypes?: ItemType[];
+  /** Restrict results to specific seller IDs */
+  sellerIds?: string[];
 }
 
 /** Auction info in search results (summary) */
@@ -76,6 +81,10 @@ export interface SearchResultItem {
   isShopItem: boolean;
   /** Auction info (only present for auction items) */
   auction?: SearchAuction;
+  /** Brand info (only present for branded items) */
+  itemBrand?: ItemBrand;
+  /** Shop name (only present for Mercari Shops items) */
+  shopName?: string;
 }
 
 /** Search result metadata */
